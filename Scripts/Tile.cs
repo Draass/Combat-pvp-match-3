@@ -1,17 +1,27 @@
 using UnityEngine;
 using System;
+using System.Collections;
 
 public class Tile : MonoBehaviour
 {
+    [Header("Timers")]
     public float tileSwapSpeed = .4f;
+    public float checkTilesTimer = .3f;
 
+    [Header("Column stuff")]
     private int column;
     private int row;
+    public int previousColumn;
+    public int previousRow;
+    
     private GameObject otherTile;
 
     public int targetX;
     public int targetY;
 
+    private bool isMatched = false;
+    public bool isSwitching = false;
+    
     private Board board;
 
     private Vector2 startTouchPosition;
@@ -20,6 +30,7 @@ public class Tile : MonoBehaviour
     private Vector2 tilePosition;
 
     public float swipeAngle = 0;
+    public float swipeDistance = 1f;
 
     // Start is called before the first frame update
     void Start()
@@ -29,11 +40,20 @@ public class Tile : MonoBehaviour
         targetY = Convert.ToInt32(transform.position.y);
         column = targetX;
         row = targetY;
+        
+        previousColumn = column;
+        previousRow = row;
     }
 
     // Update is called once per frame
     void Update()
     {
+        FindMatches();
+        if (isMatched == true)
+        {
+            SpriteRenderer sprite = GetComponent<SpriteRenderer>();
+            sprite.color = new Color(0f, 0f, 0f, .2f);
+        }
         targetX = column;
         targetY = row;
         MoveTiles();
@@ -74,20 +94,29 @@ public class Tile : MonoBehaviour
     private void OnMouseDown()
     {
         startTouchPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-
     }
 
     private void OnMouseUp()
     {
         finalTouchPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        CalculateAngle();
-        CalculateSwipeDirection();
+        float ySwipeDistance = Mathf.Abs(finalTouchPosition.y - startTouchPosition.y);
+        float xSwipeDistance = Mathf.Abs(finalTouchPosition.x - startTouchPosition.x);
+
+        if (isSwitching == false && (xSwipeDistance > swipeDistance || ySwipeDistance > swipeDistance))
+        {
+            isSwitching = true;
+            //finalTouchPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            CalculateAngle();
+            CalculateSwipeDirection();
+            StartCoroutine(CheckMovement());
+            isSwitching = false;
+        }
     }
 
     void CalculateAngle()
     {
         swipeAngle = Mathf.Atan2(finalTouchPosition.y - startTouchPosition.y, finalTouchPosition.x - startTouchPosition.x) * Mathf.Rad2Deg;
-        Debug.Log(swipeAngle);
+        //Debug.Log(swipeAngle);
     }
 
     void CalculateSwipeDirection()
@@ -122,6 +151,57 @@ public class Tile : MonoBehaviour
             column -= 1;
         }
         else
-            Debug.LogError("Something is terribly wrong with mouse swipe angle direction calculation!");
+            Debug.Log("Swiped out of board!");
+    }
+    
+    public IEnumerator CheckMovement()
+    {
+        yield return new WaitForSeconds(checkTilesTimer);
+        if (otherTile != null)
+        {
+            if (!isMatched && !otherTile.GetComponent<Tile>().isMatched)
+            {
+                otherTile.GetComponent<Tile>().row = row;
+                otherTile.GetComponent<Tile>().column = column;
+                row = previousRow;
+                column = previousColumn;
+            }
+            otherTile = null;
+        }
+
+    }
+
+    void FindMatches()
+    {
+        //Find matches on left and right
+        if (column > 0 && column < board.boardWidth - 1)
+        {
+            GameObject leftTile = board.allBackgroundTiles[column - 1, row];
+            GameObject rightTile = board.allBackgroundTiles[column + 1, row];
+            if (leftTile != null && rightTile != null)
+            {
+                if (leftTile.tag == this.gameObject.tag && rightTile.tag == this.gameObject.tag)
+                {
+                    leftTile.GetComponent<Tile>().isMatched = true;
+                    rightTile.GetComponent<Tile>().isMatched = true;
+                    isMatched = true;
+                }
+            }
+        }
+        //Find matches on up and down
+        if (row > 0 && row < board.boardHeight - 1)
+        {
+            GameObject upperTile = board.allBackgroundTiles[column, row - 1];
+            GameObject downTile = board.allBackgroundTiles[column, row + 1];
+            if (upperTile != null && downTile != null)
+            {
+                if (upperTile.tag == this.gameObject.tag && downTile.tag == this.gameObject.tag)
+                {
+                    upperTile.GetComponent<Tile>().isMatched = true;
+                    downTile.GetComponent<Tile>().isMatched = true;
+                    isMatched = true;
+                }
+            }
+        }
     }
 }
