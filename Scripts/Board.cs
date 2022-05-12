@@ -34,20 +34,24 @@ public class Board : MonoBehaviour
                 
                 //choose a random tile for the segment
                 int tileToUse = Random.Range(0, tiles.Length);
+                
+                backgroundTile.tag = tiles[tileToUse].tag;
+                
                 int maxIterations = 0;
-                 while (isMatchOnStart(i, j, tiles[tileToUse]) && maxIterations < 100)
+                while (isMatchOnStart(i, j, tiles[tileToUse]) && maxIterations < 100)
                 {
                     tileToUse = Random.Range(0, tiles.Length);
                     maxIterations++;
                 }
-                Debug.Log(maxIterations);
+                //Debug.Log(maxIterations);
                 maxIterations = 0;
                 InitializeTiles(backgroundTile.name, tileStartPosition, tileToUse);
-                allBackgroundTiles[i, j] = backgroundTile;
+                
+                allBackgroundTiles[i, j] = tiles[tileToUse];
             }
         }
     }
-    //should divide this onto 2 separate methods. DONT FORGET
+    
     void InitializeTiles(string backgroundTileName, Vector2 tileStartPosition, int tileToUse)
     {
         //instantiate tile
@@ -57,55 +61,23 @@ public class Board : MonoBehaviour
         //give it a proper name
         tile.name = backgroundTileName;
     }
-//This whole method doesn't work
+//Check if there are matches on game beginning
 private bool isMatchOnStart(int column, int row, GameObject piece)
     {
-        /* SOMETHING DOESNT WORK HERE
-        if (column > 1)          
+        if (column > 1)         
         {
-            //if the pieces to my left (already generated) are both of the same type as me then ...
             if (allBackgroundTiles[column - 1, row].tag == piece.tag &&
                 allBackgroundTiles[column - 2, row].tag == piece.tag)
             {
-                Debug.Log("Column is greater than 1");
                 return true;
             }
         }
+
         if (row > 1)
         {
-            //if the pieces to my left (already generated) are both of the same type as me then ...
-            if (allBackgroundTiles[column, row - 1].tag == piece.tag &&
-                allBackgroundTiles[column, row - 2].tag == piece.tag)
+            if (allBackgroundTiles[column, row - 1].tag == piece.tag) 
             {
-                Debug.Log("Row is greater than 1");
-                return true;
-            }
-        } 
-        */
-        //code lower doesn't work too
-        if (column > 1 && row > 1)
-        {
-            if(allBackgroundTiles[column - 1, row].tag == piece.tag && allBackgroundTiles[column - 2, row].tag == piece.tag)
-            {
-                return true;
-            }
-            if (allBackgroundTiles[column, row - 1].tag == piece.tag && allBackgroundTiles[column, row - 2].tag == piece.tag)
-            {
-                return true;
-            }
-        }
-        else if (column <= 1 || row <= 1)
-        {
-            if(row > 1)
-            {
-                if (allBackgroundTiles[column, row - 1].tag == piece.tag && piece.tag == allBackgroundTiles[column, row - 2].tag)
-                {
-                    return true;
-                } 
-            }
-            if (column > 1)
-            {
-                if (allBackgroundTiles[column - 1, row].tag == piece.tag && piece.tag == allBackgroundTiles[column - 2, row].tag)
+                if (allBackgroundTiles[column, row - 2].tag == piece.tag)
                 {
                     return true;
                 }
